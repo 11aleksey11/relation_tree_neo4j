@@ -96,11 +96,9 @@ class App:
                 else:
                     query = make_relation
         with open("file.txt", "w") as output:
-            output.write(str('create ' + re.sub(r'(,\s*,)+', ',', query).replace(', ,', ',').replace(',  ,', ',')
-                             .replace(',   ,', ',').replace(',    ,', ',')))
-        result = tx.run(
-            ('create ' + re.sub(r'(,\s*,)+', ',', query)).replace(', ,', ',').replace(',  ,', ',')
-            .replace(',   ,', ',').replace('    ', ',').replace(', ,', ',').strip())
+            output.write(str('create ' + re.sub(r'(,\s*,)+', ',', query)))
+        result = tx.run('create ' + re.sub(r'(,\s*,)+', ',', query))
+        print('txt saved')
         return [result]
 
     app = FastAPI()
