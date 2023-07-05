@@ -19,39 +19,32 @@ archive = set()
 row_encoding = 1
 
 
+def make_var(string):
+    string = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', string.strip('\'')).strip('_').strip('\'')
+    if string != '':
+        if string[0].isdigit():
+            string = '_' + string
+    string = re.sub(r'_+', '_', string)
+    return string
+
+
 def create_dict(_list, parent):
     global row_encoding
     for item in _list:
-        temp_key = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', item.strip('\'')).strip('_')
-        temp_value = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', parent.strip('\'')).strip('_')
-        if temp_key != '':
-            if temp_key[0].isdigit():
-                temp_key = '_' + temp_key
-        temp_key = re.sub(r'_+', '_', temp_key)
-        if temp_value != '':
-            if temp_value[0].isdigit():
-                temp_value = '_' + temp_value
+        temp_key = make_var(item)
+        temp_value = make_var(parent)
+        if '\'.' not in item:
+            mk = find_mk()
+            mk = make_var(mk)
+            temp_key = re.sub(r'_+', '_', mk + '_' + temp_key)
         temp_value = re.sub(r'_+', '_', temp_value)
         if temp_key in _dct.keys():
-            if '\'.' in item:
-                temp_key = re.sub(r'_+', '_', temp_key)
-                temp_value = re.sub(r'_+', '_', temp_value)
-                _dct[temp_key].append(temp_value)
-            else:
-                mk = find_mk().strip('_')
-                mk = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', mk).strip('_')
-                _dct[(mk + '_' + temp_key).replace('__', '_')].append(temp_value)
+            temp_key = re.sub(r'_+', '_', temp_key)
+            _dct[temp_key].append(temp_value)
 
         else:
-            if '\'.' in item:
-                temp_key = re.sub(r'_+', '_', temp_key)
-                temp_value = re.sub(r'_+', '_', temp_value)
-                _dct[temp_key] = [temp_value]
-            else:
-                mk = find_mk()
-                mk = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', mk).strip('_')
-                mk_cube = re.sub(r'_+', '_', mk + '_' + temp_key)
-                _dct[mk_cube] = [temp_value]
+            temp_key = re.sub(r'_+', '_', temp_key)
+            _dct[temp_key] = [temp_value]
         sheet_encoding.cell(row=row_encoding, column=1).value = item
         sheet_encoding.cell(row=row_encoding, column=2).value = temp_key
         row_encoding += 1
@@ -88,24 +81,26 @@ class App:
                     query = f'({key}:Cube {{ name: "{key}"}})'
                     archive.add(key)
                 else:
-                    query = ', '.join([f'({key}:Cube {{ name: "{key}"}})', query])
+                    query = ', '.join([f'({key}:Cube {{ name: "{key}"}})', query.strip(', ')])
                     archive.add(key)
             for child in dct[key]:
                 if child not in archive:
-                    query = ', '.join([f'({child}:Cube {{ name: "{child}"}})', query])
+                    query = ', '.join([f'({child}:Cube {{ name: "{child}"}})', query.strip(', ')])
                     archive.add(child)
                 if f'({child})-[:RELATION]->({key})' not in query:
                     make_relation = f'({child})-[:RELATION]->({key})'
                 else:
                     make_relation = ''
                 if query != '':
-                    query = ', '.join([query, make_relation])
+                    query = ', '.join([query.strip(', '), make_relation.strip(', ')])
                 else:
                     query = make_relation
         with open("file.txt", "w") as output:
-            output.write(str('create ' + re.sub(r'(,\s*,)+', ',', query).replace(', ,', ', ').replace(',  ,', ', ')))
+            output.write(str('create ' + re.sub(r'(,\s*,)+', ',', query).replace(', ,', ',').replace(',  ,', ',')
+                             .replace(',   ,', ',').replace(',    ,', ',')))
         result = tx.run(
-            ('create ' + re.sub(r'(,\s*,)+', ',', query)).replace(', ,', ', ').replace(',  ,', ', ').strip())
+            ('create ' + re.sub(r'(,\s*,)+', ',', query)).replace(', ,', ',').replace(',  ,', ',')
+            .replace(',   ,', ',').replace('    ', ',').replace(', ,', ',').strip())
         return [result]
 
     app = FastAPI()
