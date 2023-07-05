@@ -22,33 +22,38 @@ row_encoding = 1
 def create_dict(_list, parent):
     global row_encoding
     for item in _list:
-        temp_key = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', item)
-        temp_value = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', parent)
-        if temp_key[0].isdigit():
-            temp_key = '_' + temp_key
-        if temp_value[0].isdigit():
-            temp_value = '_' + temp_value
+        temp_key = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', item.strip('\'')).strip('_')
+        temp_value = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', parent.strip('\'')).strip('_')
+        if temp_key != '':
+            if temp_key[0].isdigit():
+                temp_key = '_' + temp_key
+        temp_key = re.sub(r'_+', '_', temp_key)
+        if temp_value != '':
+            if temp_value[0].isdigit():
+                temp_value = '_' + temp_value
+        temp_value = re.sub(r'_+', '_', temp_value)
         if temp_key in _dct.keys():
             if '\'.' in item:
+                temp_key = re.sub(r'_+', '_', temp_key)
+                temp_value = re.sub(r'_+', '_', temp_value)
                 _dct[temp_key].append(temp_value)
             else:
-                mk = find_mk()
-                _dct[mk + '_' + temp_key].append(temp_value)
-                sheet_encoding.cell(row=row_encoding, column=1).value = mk + '.' + item
-                sheet_encoding.cell(row=row_encoding, column=2).value = mk + '_' + temp_key
-                row_encoding += 1
+                mk = find_mk().strip('_')
+                mk = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', mk).strip('_')
+                _dct[(mk + '_' + temp_key).replace('__', '_')].append(temp_value)
+
         else:
             if '\'.' in item:
+                temp_key = re.sub(r'_+', '_', temp_key)
+                temp_value = re.sub(r'_+', '_', temp_value)
                 _dct[temp_key] = [temp_value]
             else:
                 mk = find_mk()
-                mk = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', mk)
-                _dct[mk + '_' + temp_key] = [temp_value]
-                sheet_encoding.cell(row=row_encoding, column=1).value = mk + '.' + item
-                sheet_encoding.cell(row=row_encoding, column=2).value = mk + '_' + temp_key
-                row_encoding += 1
+                mk = re.sub(r'[^a-zA-Zа-яА-ЯёЁ0-9]', r'_', mk).strip('_')
+                mk_cube = re.sub(r'_+', '_', mk + '_' + temp_key)
+                _dct[mk_cube] = [temp_value]
         sheet_encoding.cell(row=row_encoding, column=1).value = item
-        sheet_encoding.cell(row=row_encoding, column=1).value = temp_key
+        sheet_encoding.cell(row=row_encoding, column=2).value = temp_key
         row_encoding += 1
         sheet_encoding.cell(row=row_encoding, column=1).value = parent
         sheet_encoding.cell(row=row_encoding, column=2).value = temp_value
@@ -97,7 +102,10 @@ class App:
                     query = ', '.join([query, make_relation])
                 else:
                     query = make_relation
-        result = tx.run(('create ' + query.replace(', ,', ', ')).strip())
+        with open("file.txt", "w") as output:
+            output.write(str('create ' + re.sub(r'(,\s*,)+', ',', query).replace(', ,', ', ').replace(',  ,', ', ')))
+        result = tx.run(
+            ('create ' + re.sub(r'(,\s*,)+', ',', query)).replace(', ,', ', ').replace(',  ,', ', ').strip())
         return [result]
 
     app = FastAPI()
@@ -134,4 +142,4 @@ password = "oaYU6dMmKz7G2GgUJGRjDbh32mSfVxbAQiZZo-cODrY"
 app = App(uri, user, password)
 app.create_request(_dct)
 app.close()
-print('Endi')
+print('End')
