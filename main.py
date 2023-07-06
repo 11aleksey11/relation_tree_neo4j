@@ -4,7 +4,7 @@ from neo4j import GraphDatabase
 from fastapi import FastAPI
 import re
 
-file_way = 'tvel.xlsx'
+file_way = 'PP.xlsx'
 wb = load_workbook(file_way)
 sheet_mk = wb['Мультикубы - Кубы']
 if 'recoding' in wb.sheetnames:
@@ -78,14 +78,14 @@ class App:
         for key in dct.keys():
             if key not in archive:
                 if query == '':
-                    query = f'({key}:Cube {{ name: "{key}"}})'
+                    query = f'({key}:PP {{ name: "{key}"}})'
                     archive.add(key)
                 else:
-                    query = ', '.join([f'({key}:Cube {{ name: "{key}"}})', query.strip(', ')])
+                    query = ', '.join([f'({key}:PP {{ name: "{key}"}})', query.strip(', ')])
                     archive.add(key)
             for child in dct[key]:
                 if child not in archive:
-                    query = ', '.join([f'({child}:Cube {{ name: "{child}"}})', query.strip(', ')])
+                    query = ', '.join([f'({child}:PP {{ name: "{child}"}})', query.strip(', ')])
                     archive.add(child)
                 if f'({child})-[:RELATION]->({key})' not in query:
                     make_relation = f'({child})-[:RELATION]->({key})'
@@ -106,7 +106,7 @@ class App:
     @app.get("/match")
     def return_name_json(self, name):
         session = self.driver.session()
-        query = f'''MATCH (n:Cube {{name:"{name}"}}) RETURN {{elementId:
+        query = f'''MATCH (n:PP {{name:"{name}"}}) RETURN {{elementId:
         elementId(n), labels: LABELs(n), properties: PROPERTies(n)}} as query'''
         result = json.dumps(session.run(query).data())
         decoding_result = json.loads(result)
@@ -131,7 +131,7 @@ wb.close()
 print('Start')
 uri = "neo4j+s://7e0c70fc.databases.neo4j.io"
 user = "neo4j"
-password = "oaYU6dMmKz7G2GgUJGRjDbh32mSfVxbAQiZZo-cODrY"
+password = ""
 app = App(uri, user, password)
 app.create_request(_dct)
 app.close()
