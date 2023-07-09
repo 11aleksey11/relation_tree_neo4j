@@ -129,7 +129,7 @@ if __name__ == '__main__':
 wb.save(file_way)
 wb.close()
 print('Start')
-uri = "neo4j+s://7e0c70fc.databases.neo4j.io"
+uri = ""
 user = "neo4j"
 password = ""
 app = App(uri, user, password)
